@@ -90,6 +90,22 @@ def getbooking(request):
     serializer = BookingSerializer(data,many=True)
     return Response(serializer.data)
 
+@api_view(['POST'])
+def getbookingof(request):
+    user_id = request.data.get('user_id')
+    bookings=Booking.objects.filter(user_id=user_id)
+    data = []
+    count = 0
+    for i in bookings:
+        travel_id = BookingSerializer(i).data.get('travel')
+        member_count = BookingSerializer(i).data.get('member_count')
+        booking_price = BookingSerializer(i).data.get('booking_price')
+        data.append(TravelPlanSerializer(TravelPlan.objects.get(travel_id=travel_id)).data)
+        data[count].update({'member_count':member_count})
+        data[count].update({'booking_price':booking_price})
+        count +=1
+    return Response(data)
+
 @csrf_exempt
 @api_view(['POST'])
 def booking(request):
