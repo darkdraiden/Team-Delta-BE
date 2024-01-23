@@ -11,6 +11,7 @@ from .serializer import *
 def index(request):
     return HttpResponse("hello")
 
+@csrf_exempt
 @api_view(['POST'])
 def signin(request):
     email = request.data.get('email')
@@ -19,7 +20,7 @@ def signin(request):
         return Response({"Success":"User is authorized"},status=200)
     return Response("Invalid user credentials",status=400)
 
-@csrf_exempt
+
 @api_view(['POST'])
 def signup(request):
     data = request.data
@@ -70,7 +71,7 @@ def updatetravelplan(request):
             TPlan.about = about
         TPlan.save()
         return Response({"Success":"Travel Plan successfully updated"},status=200)
-    except models.TravelPlan.DoesNotExist:
+    except TravelPlan.DoesNotExist:
         return Response({"Failed":"No Travel Plan found"},status=400)
     
 @csrf_exempt
@@ -80,7 +81,7 @@ def deletetravelplan(request,travel_id):
         TPlan = TravelPlan.objects.get(travel_id=travel_id)
         TPlan.delete()
         return Response("Travel Plan deleted successfully",status=200)
-    except models.TravelPlan.DoesNotExist:
+    except TravelPlan.DoesNotExist:
         return Response({"Failed":"No Travel Plan found"},status=400)
 
 
@@ -90,6 +91,7 @@ def getbooking(request):
     serializer = BookingSerializer(data,many=True)
     return Response(serializer.data)
 
+@csrf_exempt
 @api_view(['POST'])
 def getbookingof(request):
     user_id = request.data.get('user_id')
@@ -137,7 +139,7 @@ def updatebooking(request):
             book.member_count = member_count
         book.save()
         return Response({"Success":"Booking successfully updated"},status=200)
-    except models.Booking.DoesNotExist:
+    except Booking.DoesNotExist:
         return Response({"Failed":"No Booking found"},status=400)
 
 @csrf_exempt
@@ -147,5 +149,5 @@ def deletebooking(request,booking_id):
         book = Booking.objects.get(booking_id=booking_id)
         book.delete()
         return Response("Booking deleted successfully",status=200)
-    except models.Booking.DoesNotExist:
+    except Booking.DoesNotExist:
         return Response({"Failed":"Booking not found"},status=400)
