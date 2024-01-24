@@ -18,7 +18,7 @@ def signin(request):
     password = request.data.get('password')
     if User.objects.filter(email=email, password=password):
         return Response({"Success":"User is authorized"},status=200)
-    return Response("Invalid user credentials",status=400)
+    return Response({"Failed":"Invalid user credentials"},status=400)
 
 
 @api_view(['POST'])
@@ -29,7 +29,7 @@ def signup(request):
         serializer.save()
         return Response({"Sucess":"User created successfully"},status=201)
     else:
-        return Response(serializer.errors,status=400)
+        return Response({"Failed":serializer.errors},status=400)
 
 @api_view(['GET'])
 def travelplan(request):
@@ -46,7 +46,7 @@ def settravelplan(request):
         serializer.save()
         return Response({"Sucess":"Travel Plan created successfully"},status=201)
     else:
-        return Response(serializer.errors,status=400)
+        return Response({"Failed":serializer.errors},status=400)
 
 @csrf_exempt
 @api_view(['PUT'])
@@ -117,7 +117,7 @@ def booking(request):
         serializer.save()
         return Response({"Sucess":"Booked successfully"},status=201)
     else:
-        return Response(serializer.errors,status=400)
+        return Response({"Failed":serializer.errors},status=400)
 
 @csrf_exempt
 @api_view(['PUT'])

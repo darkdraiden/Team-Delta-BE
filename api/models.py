@@ -19,6 +19,7 @@ class TravelPlan(models.Model):
     rate = models.IntegerField()
     start_date = models.CharField(max_length=255)
     about = models.TextField()
+    image = models.ImageField(upload_to="images")
 
     class Meta:
         managed = False
