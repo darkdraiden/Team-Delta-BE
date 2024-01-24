@@ -16,10 +16,28 @@ def index(request):
 def signin(request):
     email = request.data.get('email')
     password = request.data.get('password')
+
     if User.objects.filter(email=email, password=password):
-        return Response({"Success":"User is authorized"},status=200)
+        if User.objects.filter(email=email,role="ADMIN"):
+            request.session['ADMIN']="true"
+            request.session['email']=email
+            request.session.create()
+            session_key = request.session.session_key
+            return Response({"Cookie":session_key},status=200)
+        else:
+            request.session['email']=email
+            request.session.create()
+            session_key = request.session.session_key
+            return Response({"Cookie":session_key},status=200)
     return Response({"Failed":"Invalid user credentials"},status=400)
 
+@api_view(['POST'])
+def logout(request):
+    try:
+        del request.session["email"]
+    except KeyError:
+        pass
+    return Response("You're logged out.")
 
 @api_view(['POST'])
 def signup(request):
@@ -33,6 +51,7 @@ def signup(request):
 
 @api_view(['GET'])
 def travelplan(request):
+    print(request.session.get("email"))
     data = TravelPlan.objects.all()
     serializer = TravelPlanSerializer(data,many=True)
     return Response(serializer.data)
