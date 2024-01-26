@@ -23,18 +23,13 @@ def signin(request):
     password = request.data.get('password')
 
     if User.objects.filter(email=email, password=password):
+        request.session['email']=email
+        request.session.create()
+        session_key = request.session.session_key
         if User.objects.filter(email=email,role="ADMIN"):
-            request.session['ADMIN']="true"
-            request.session['email']=email
-            request.session.create()
-            session_key = request.session.session_key
-            return Response(session_key,status=200)
+            return Response({"sessionid":session_key,"role":"ADMIN"},status=200)
         else:
-            # request.set_cookie('email', value=email, samesite='None', secure=True)
-            request.session['email']=email
-            request.session.create
-            session_key = request.session.session_key
-            return Response(session_key,status=200)
+            return Response({"sessionid":session_key,"role":"USER"},status=200)
     return Response("Invalid user credentials",status=400)
 
 @api_view(['POST'])
@@ -179,7 +174,9 @@ def deletebooking(request,booking_id):
 @csrf_exempt
 @api_view(['POST'])
 def checkUser(request):
-    session_id = request.session.session_key
+    session_id = request.data.get('sessionid')
+    print(request.data)
+    print(request.session.session_key)
     if not session_id:
         return Response({'message': 'Session ID not provided'}, status=400)
     try:
@@ -194,8 +191,9 @@ def checkUser(request):
 
     if email:
         # If there is a user ID, the session is associated with a logged-in user
-        user = User.objects.get(email=email)
-        return Response({'message': 'Session is valid'},status=200)
+        if User.objects.filter(email=email,role="ADMIN"):
+            return Response("ADMIN",status=200)
+        return Response("User",status=200)
     else:
         # If there is no user ID, the session is not associated with a logged-in user
         return Response({'message': 'Session is valid but not associated with a user'})
