@@ -1,10 +1,15 @@
 from django.shortcuts import render
+from django.contrib.auth import authenticate, login
 from django.http import HttpResponse
 from rest_framework.response import Response
 from rest_framework.decorators import api_view
 from django.views.decorators.csrf import csrf_exempt
 from .models import *
 from .serializer import *
+from django.contrib.sessions.models import Session
+from django.utils import timezone
+from django.contrib.sessions.middleware import SessionMiddleware
+
 
 
 # Create your views here.
@@ -23,13 +28,14 @@ def signin(request):
             request.session['email']=email
             request.session.create()
             session_key = request.session.session_key
-            return Response({"Cookie":session_key},status=200)
+            return Response(session_key,status=200)
         else:
+            # request.set_cookie('email', value=email, samesite='None', secure=True)
             request.session['email']=email
-            request.session.create()
+            request.session.create
             session_key = request.session.session_key
-            return Response({"Cookie":session_key},status=200)
-    return Response({"Failed":"Invalid user credentials"},status=400)
+            return Response(session_key,status=200)
+    return Response("Invalid user credentials",status=400)
 
 @api_view(['POST'])
 def logout(request):
@@ -47,11 +53,10 @@ def signup(request):
         serializer.save()
         return Response({"Sucess":"User created successfully"},status=201)
     else:
-        return Response({"Failed":serializer.errors},status=400)
+        return Response(serializer.errors,status=400)
 
 @api_view(['GET'])
 def travelplan(request):
-    print(request.session.get("email"))
     data = TravelPlan.objects.all()
     serializer = TravelPlanSerializer(data,many=True)
     return Response(serializer.data)
@@ -170,3 +175,35 @@ def deletebooking(request,booking_id):
         return Response("Booking deleted successfully",status=200)
     except Booking.DoesNotExist:
         return Response({"Failed":"Booking not found"},status=400)
+
+@csrf_exempt
+@api_view(['POST'])
+def checkUser(request):
+    session_id = request.session.session_key
+    if not session_id:
+        return Response({'message': 'Session ID not provided'}, status=400)
+    try:
+        session = Session.objects.get(session_key=session_id)
+    except Session.DoesNotExist:
+        return Response({'message': 'Invalid session ID'}, status=401)
+    if session.expire_date < timezone.now():
+        return Response({'message': 'Session has expired'}, status=401)
+
+    session_data = session.get_decoded()
+    email = session_data.get('email')
+
+    if email:
+        # If there is a user ID, the session is associated with a logged-in user
+        user = User.objects.get(email=email)
+        return Response({'message': 'Session is valid'},status=200)
+    else:
+        # If there is no user ID, the session is not associated with a logged-in user
+        return Response({'message': 'Session is valid but not associated with a user'})
+
+    # print("2 : ",session_id)
+    # if session_id:
+    #     print("valid : hai")
+    #     return Response({'session_id': session_id})
+    # else:
+    #     print("valid : nahi hai")
+    #     return Response({'message': 'No active session'}, status=404)

@@ -16,5 +16,6 @@ urlpatterns = [
     path('updatebooking/', views.updatebooking),
     path('getbookingof/', views.getbookingof),
     path('logout/', views.logout),
+    path('checkUser/', views.checkUser),
     path('deletebooking/<int:booking_id>/', views.deletebooking),
 ]+static(settings.MEDIA_URL,document_root=settings.MEDIA_ROOT)
