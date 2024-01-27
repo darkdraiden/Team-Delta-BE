@@ -113,30 +113,53 @@ def getbooking(request):
 @csrf_exempt
 @api_view(['POST'])
 def getbookingof(request):
-    user_id = request.data.get('user_id')
-    bookings=Booking.objects.filter(user_id=user_id)
-    data = []
-    count = 0
-    for i in bookings:
-        travel_id = BookingSerializer(i).data.get('travel')
-        member_count = BookingSerializer(i).data.get('member_count')
-        booking_price = BookingSerializer(i).data.get('booking_price')
-        data.append(TravelPlanSerializer(TravelPlan.objects.get(travel_id=travel_id)).data)
-        data[count].update({'member_count':member_count})
-        data[count].update({'booking_price':booking_price})
-        count +=1
-    return Response(data)
+    try:
+        session_id = request.data.get('sessionid')
+        if session_id:
+            session = Session.objects.get(session_key=session_id)
+        email = session.get_decoded().get("email")
+        user = User.objects.get(email=email)
+        user_id = user.user_id
+        bookings=Booking.objects.filter(user_id=user_id)
+        data = []
+        count = 0
+        for i in bookings:
+            travel_id = BookingSerializer(i).data.get('travel')
+            member_count = BookingSerializer(i).data.get('member_count')
+            booking_price = BookingSerializer(i).data.get('booking_price')
+            data.append(TravelPlanSerializer(TravelPlan.objects.get(travel_id=travel_id)).data)
+            data[count].update({'member_count':member_count})
+            data[count].update({'booking_price':booking_price})
+            
+            count +=1
+        return Response(data,status=200)
+    except:
+        return Response("invalid request",status=400)
+    return Response("Invalid",status=400)
 
 @csrf_exempt
 @api_view(['POST'])
 def booking(request):
-    data = request.data
-    serializer = BookingSerializer(data=data)
-    if serializer.is_valid():
-        serializer.save()
-        return Response({"Sucess":"Booked successfully"},status=201)
-    else:
-        return Response({"Failed":serializer.errors},status=400)
+    try:
+        session_id = request.data.get('sessionid')
+        if session_id:
+            session = Session.objects.get(session_key=session_id)
+        email = session.get_decoded().get("email")
+        usr = User.objects.get(email=email)
+        user = usr.user_id
+        booking_price=request.data.get('booking_price')
+        travel = request.data.get('travel')
+        member_count = request.data.get('member_count')
+        data = {"booking_price":booking_price,"travel":travel,"user":user,"member_count":member_count}
+        serializer = BookingSerializer(data = data)
+        if serializer.is_valid():
+            serializer.save()
+            return Response({"Sucess":"Booked successfully"},status=201)
+        else:
+            return Response(serializer.errors,status=400)
+    except:
+        return Response({"Session Failed"},status=400)
+    return Response("Invalid",status=400)
 
 @csrf_exempt
 @api_view(['PUT'])
@@ -175,8 +198,6 @@ def deletebooking(request,booking_id):
 @api_view(['POST'])
 def checkUser(request):
     session_id = request.data.get('sessionid')
-    print(request.data)
-    print(request.session.session_key)
     if not session_id:
         return Response({'message': 'Session ID not provided'}, status=400)
     try:
