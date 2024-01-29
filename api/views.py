@@ -56,8 +56,20 @@ def signup(request):
 @api_view(['GET'])
 def travelplan(request):
     data = TravelPlan.objects.all()
+    Data = []
+    cnt = 0
+    for i in data:
+        booking = Booking.objects.filter(travel_id=i.travel_id)
+        if booking:
+            count = 0
+            for j in booking:
+                count+=j.member_count
+            print(i.travel_id,count)
+            Data.append(TravelPlanSerializer(i).data)
+            Data[cnt].update({'total_count':count})
+            cnt=cnt+1
     serializer = TravelPlanSerializer(data,many=True)
-    return Response(serializer.data)
+    return Response(Data)
 
 @csrf_exempt
 @api_view(['POST'])
@@ -156,7 +168,8 @@ def booking(request):
         booking_price=request.data.get('booking_price')
         travel = request.data.get('travel')
         member_count = request.data.get('member_count')
-        data = {"booking_price":booking_price,"travel":travel,"user":user,"member_count":member_count}
+        booking_date = request.data.get('booking_date')
+        data = {"booking_price":booking_price,"travel":travel,"user":user,"member_count":member_count,"booking_date":booking_date}
         serializer = BookingSerializer(data = data)
         if serializer.is_valid():
             serializer.save()
