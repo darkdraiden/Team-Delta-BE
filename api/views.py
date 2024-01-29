@@ -9,6 +9,8 @@ from .serializer import *
 from django.contrib.sessions.models import Session
 from django.utils import timezone
 from django.contrib.sessions.middleware import SessionMiddleware
+from django.contrib.auth.hashers import make_password, check_password
+from django.core.files.storage import default_storage
 
 
 
@@ -21,8 +23,12 @@ def index(request):
 def signin(request):
     email = request.data.get('email')
     password = request.data.get('password')
+    try:
+        user = User.objects.get(email=email)
+    except User.DoesNotExist:
+        return Response("Invalid user credentials", status=400)
 
-    if User.objects.filter(email=email, password=password):
+    if check_password(password, user.password):
         request.session['email']=email
         request.session.create()
         session_key = request.session.session_key
@@ -44,7 +50,11 @@ def logout(request):
 def signup(request):
     data = request.data
     serializer = UserSerializer(data=data)
+
     if serializer.is_valid():
+        password = serializer.validated_data.get('password')
+        hashed_password = make_password(password)
+        serializer.validated_data['password'] = hashed_password
         serializer.save()
         return Response({"Sucess":"User created successfully"},status=201)
     else:
@@ -98,6 +108,9 @@ def updatetravelplan(request):
 def deletetravelplan(request,travel_id):
     try:
         TPlan = TravelPlan.objects.get(travel_id=travel_id)
+        image_file = TPlan.image
+        if image_file:
+            default_storage.delete(image_file.name)
         TPlan.delete()
         return Response("Travel Plan deleted successfully",status=200)
     except TravelPlan.DoesNotExist:
