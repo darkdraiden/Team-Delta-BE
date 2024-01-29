@@ -38,13 +38,6 @@ def signin(request):
             return Response({"sessionid":session_key,"role":"USER"},status=200)
     return Response("Invalid user credentials",status=400)
 
-@api_view(['POST'])
-def logout(request):
-    try:
-        del request.session["email"]
-    except KeyError:
-        pass
-    return Response("You're logged out.")
 
 @api_view(['POST'])
 def signup(request):
@@ -133,7 +126,7 @@ def getbookingof(request):
         email = session.get_decoded().get("email")
         user = User.objects.get(email=email)
         user_id = user.user_id
-        bookings=Booking.objects.filter(user_id=user_id)
+        bookings=Booking.objects.filter(user_id=user_id).order_by('booking_date')
         data = []
         count = 0
         for i in bookings:
@@ -143,7 +136,7 @@ def getbookingof(request):
             data.append(TravelPlanSerializer(TravelPlan.objects.get(travel_id=travel_id)).data)
             data[count].update({'member_count':member_count})
             data[count].update({'booking_price':booking_price})
-            
+            data[count].update({'booking_id':i.booking_id})
             count +=1
         return Response(data,status=200)
     except:
@@ -171,7 +164,7 @@ def booking(request):
         else:
             return Response(serializer.errors,status=400)
     except:
-        return Response({"Session Failed"},status=400)
+        return Response({"Can't book this plan"},status=400)
     return Response("Invalid",status=400)
 
 @csrf_exempt
@@ -224,18 +217,8 @@ def checkUser(request):
     email = session_data.get('email')
 
     if email:
-        # If there is a user ID, the session is associated with a logged-in user
         if User.objects.filter(email=email,role="ADMIN"):
             return Response("ADMIN",status=200)
         return Response("User",status=200)
     else:
-        # If there is no user ID, the session is not associated with a logged-in user
-        return Response({'message': 'Session is valid but not associated with a user'})
-
-    # print("2 : ",session_id)
-    # if session_id:
-    #     print("valid : hai")
-    #     return Response({'session_id': session_id})
-    # else:
-    #     print("valid : nahi hai")
-    #     return Response({'message': 'No active session'}, status=404)
+        return Response({'message': 'Session is valid but not associated with a user'},status=400)

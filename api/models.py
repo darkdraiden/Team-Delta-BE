@@ -31,6 +31,7 @@ class Booking(models.Model):
     travel = models.ForeignKey('TravelPlan', models.DO_NOTHING)
     user = models.ForeignKey('User', models.DO_NOTHING)
     member_count = models.IntegerField()
+    booking_date = models.DateField()
 
     class Meta:
         managed = False
