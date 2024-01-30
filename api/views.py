@@ -60,14 +60,13 @@ def travelplan(request):
     cnt = 0
     for i in data:
         booking = Booking.objects.filter(travel_id=i.travel_id)
+        count = 0
         if booking:
-            count = 0
             for j in booking:
                 count+=j.member_count
-            print(i.travel_id,count)
-            Data.append(TravelPlanSerializer(i).data)
-            Data[cnt].update({'total_count':count})
-            cnt=cnt+1
+        Data.append(TravelPlanSerializer(i).data)
+        Data[cnt].update({'total_count':count})
+        cnt=cnt+1
     serializer = TravelPlanSerializer(data,many=True)
     return Response(Data)
 
